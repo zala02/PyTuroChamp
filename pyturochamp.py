@@ -253,7 +253,7 @@ def getmove(b, silent = False, usebook = False):
 	ll.sort(key = lambda m: m[1] + m[2])
 	if COMPC == c.WHITE:
 		ll.reverse()
-	print('# %.2f %s' % (ll[0][1] + ll[0][2], [str(ll[0][0])]))
+	print('# %.2f %s' % (ll[0][1] + ll[0][2], [str(ll[0][0])]), file=sys.stderr)
 	return ll[0][1] + ll[0][2], [str(ll[0][0])]
 
 if __name__ == '__main__':

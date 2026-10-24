@@ -43,17 +43,25 @@ d = ''
 r = ''
 
 def move(r):
-	rm = r[0]
-	d.push_uci(rm)
-	if is_uci:
-		print("bestmove", rm)
-	else:
-		print("move", rm)
-	if log:
-		log.write("move %s\n" % rm)
-		log.flush()
-	pgn()
+    rm = r[0]
+    d.push_uci(rm)
 
+    print(f"# DEBUG: is_uci={is_uci}", file=sys.stderr, flush=True)
+
+    if is_uci:
+        print("bestmove", rm, flush=True)
+    else:
+        print("move", rm, flush=True)
+
+    print("# DEBUG: printed move", file=sys.stderr, flush=True)
+
+    if log:
+        log.write("move %s\n" % rm)
+        log.flush()
+
+    pgn()
+    print("# DEBUG: finished move()", file=sys.stderr, flush=True)	
+		
 def pgn():
 	game = chess.pgn.Game.from_board(d)
 	now = datetime.datetime.now()
@@ -80,9 +88,8 @@ def fromfen(fen):
 
 	try:
 		d = c.Board(fen)
-	except:
-		print("Bad FEN")
-	print(d)
+	except ValueError:
+		print("# Bad FEN", file=sys.stderr)
 
 while True:
 	l = ''
@@ -106,27 +113,50 @@ while True:
 			newgame()
 		elif l == 'uci':
 			is_uci = True
+			print("id name", nm)
+			print("id author PyTuroChamp")
 			print("uciok")
 		elif l == 'ucinewgame':
 			newgame()
-		elif 'position startpos moves' in l:
-			mm = l.split()[3:]
-			newgame()
-			for mo in mm:
-				d.push_uci(mo)
+		elif l.startswith('position '):
+        		parts = l.split()
+
+	        	if parts[1] == 'startpos':
+	                	newgame()
+	                	moves_idx = 3
+
+	        	elif parts[1] == 'fen':
+        	        	fen_end = parts.index('moves') if 'moves' in parts else len(parts)
+                		fen = ' '.join(parts[2:fen_end])
+                		fromfen(fen)
+                		moves_idx = fen_end + 1
+
+        		else:
+                		continue
+
+        		if 'moves' in parts:
+                		for mo in parts[moves_idx:]:
+                	        	d.push_uci(mo)
 		elif l == 'isready':
-			newgame()
-			print("id name", nm)
 			print("readyok")
 		elif 'setboard' in l:
 			fen = l.split(' ', 1)[1]
 			fromfen(fen)
+
 		elif l[:2] == 'go' or l == 'force':
-			if not d:
-				newgame()
-			t, r = p.getmove(d, silent = True)
-			if r:
-				move(r)
+				if not d:
+						newgame()
+
+				print("# DEBUG: starting getmove", file=sys.stderr, flush=True)
+				t, r = p.getmove(d, silent=True)
+				print(f"# DEBUG: getmove returned r={r!r}", file=sys.stderr, flush=True)
+
+				if r:
+						print("# DEBUG: calling move()", file=sys.stderr, flush=True)
+						move(r)
+				else:
+						print("# DEBUG: no move returned", file=sys.stderr, flush=True)
+
 		elif l == '?':
 			print("move", r)
 			if log:
